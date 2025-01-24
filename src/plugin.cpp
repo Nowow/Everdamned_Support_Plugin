@@ -216,125 +216,273 @@ void IncreaseActiveEffectDuration(RE::StaticFunctionTag*, RE::ActiveEffect* theE
     }
 }
 
-float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int skillNumber, int playerLevel) {
+RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int playerLevel, int skillsPerLevelSetting, int skillBaseSetting) {
+
+
     RE::TESNPC* someNPC = thisActor->GetActorBase();
     RE::CLASS_DATA thisNpcClass = someNPC->npcClass->data;
 
-    int classSkillWeight;
-    float currentSkillLevel;
+    //thisActor->AsActorValueOwner()->GetBaseActorValue();
 
-    switch (skillNumber) {
-        case 0:
-            classSkillWeight = thisNpcClass.skillWeights.oneHanded;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kOneHanded];
-            break;
-        case 1:
-            classSkillWeight = thisNpcClass.skillWeights.twoHanded;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kTwoHanded];
-            break;
-        case 2:
-            classSkillWeight = thisNpcClass.skillWeights.archery;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kArchery];
-            break;
-        case 3:
-            classSkillWeight = thisNpcClass.skillWeights.block;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kBlock];
-            break;
-        case 4:
-            classSkillWeight = thisNpcClass.skillWeights.smithing;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kSmithing];
-            break;
-        case 5:
-            classSkillWeight = thisNpcClass.skillWeights.heavyArmor;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kHeavyArmor];
-            break;
-        case 6:
-            classSkillWeight = thisNpcClass.skillWeights.lightArmor;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kLightArmor];
-            break;
-        case 7:
-            classSkillWeight = thisNpcClass.skillWeights.pickpocket;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kPickpocket];
-            break;
-        case 8:
-            classSkillWeight = thisNpcClass.skillWeights.lockpicking;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kLockpicking];
-            break;
-        case 9:
-            classSkillWeight = thisNpcClass.skillWeights.sneak;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kSneak];
-            break;
-        case 10:
-            classSkillWeight = thisNpcClass.skillWeights.alchemy;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kAlchemy];
-            break;
-        case 11:
-            classSkillWeight = thisNpcClass.skillWeights.speech;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kSpeech];
-            break;
-        case 12:
-            classSkillWeight = thisNpcClass.skillWeights.alteration;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kAlteration];
-            break;
-        case 13:
-            classSkillWeight = thisNpcClass.skillWeights.conjuration;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kConjuration];
-            break;
-        case 14:
-            classSkillWeight = thisNpcClass.skillWeights.destruction;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kDestruction];
-            break;
-        case 15:
-            classSkillWeight = thisNpcClass.skillWeights.illusion;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kIllusion];
-            break;
-        case 16:
-            classSkillWeight = thisNpcClass.skillWeights.restoration;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kRestoration];
-            break;
-        case 17:
-            classSkillWeight = thisNpcClass.skillWeights.enchanting;
-            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kEnchanting];
-            break;
-        default:
-            logger::debug("GetAdjustedAvForComparison was not provided with valid skillNumber, was provided: {}", skillNumber);
-            return 0.0;
-    }
-
-    logger::debug("Procured class skill Weight: {}, current skill level: {}", classSkillWeight, currentSkillLevel);
+    RE::BSTArray<int> resultArr;
 
     bool lvlsWithPC = someNPC->HasPCLevelMult();
 
+    float currentSkillLevel;
+    int maxSkillLevel = 0;
+    int maxSkillLevelNumber = 0;
+
+
     if (!lvlsWithPC) {
-        logger::debug("This actor does not lvl with PC, returning current skill level of {}", currentSkillLevel);
-        return currentSkillLevel;
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kOneHanded);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 0;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kTwoHanded);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 1;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kArchery);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 2;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kBlock);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 3;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kSmithing);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 4;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kHeavyArmor);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 5;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kLightArmor);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 6;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kPickpocket);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 7;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kLockpicking);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 8;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kSneak);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 9;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kAlchemy);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 10;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kSpeech);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 11;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kAlteration);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 12;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kConjuration);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 13;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kDestruction);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 14;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kIllusion);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 15;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kRestoration);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 16;
+        }
+        currentSkillLevel = thisActor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kEnchanting);
+        if (currentSkillLevel > maxSkillLevel) {
+            maxSkillLevel = currentSkillLevel;
+            maxSkillLevelNumber = 17;
+        }
+        logger::debug("This actor does not lvl with PC, returning current max skill level of {}", maxSkillLevel);
+
+        resultArr.push_back(maxSkillLevel);
+        resultArr.push_back(maxSkillLevelNumber);
+        return resultArr;
     }
+
+    int currentWeight;
+    int maxWeight = 0;
+    int maxWeightSkillNumber = 0;
+    int totalWeights = 0;
+
+    currentWeight = thisNpcClass.skillWeights.oneHanded;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 0;
+    }
+    currentWeight = thisNpcClass.skillWeights.twoHanded;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 1;
+    }
+    currentWeight = thisNpcClass.skillWeights.archery;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 2;
+    }
+    currentWeight = thisNpcClass.skillWeights.block;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 3;
+    }
+    currentWeight = thisNpcClass.skillWeights.smithing;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 4;
+    }
+    currentWeight = thisNpcClass.skillWeights.heavyArmor;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 5;
+    }
+    currentWeight = thisNpcClass.skillWeights.lightArmor;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 6;
+    }
+    currentWeight = thisNpcClass.skillWeights.pickpocket;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 7;
+    }
+    currentWeight = thisNpcClass.skillWeights.lockpicking;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 8;
+    }
+    currentWeight = thisNpcClass.skillWeights.sneak;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 9;
+    }
+    currentWeight = thisNpcClass.skillWeights.alchemy;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 10;
+    }
+    currentWeight = thisNpcClass.skillWeights.speech;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 11;
+    }
+    currentWeight = thisNpcClass.skillWeights.alteration;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 12;
+    }
+    currentWeight = thisNpcClass.skillWeights.conjuration;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 13;
+    }
+    currentWeight = thisNpcClass.skillWeights.destruction;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 14;
+    }
+    currentWeight = thisNpcClass.skillWeights.illusion;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 15;
+    }
+    currentWeight = thisNpcClass.skillWeights.restoration;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 16;
+    }
+    currentWeight = thisNpcClass.skillWeights.enchanting;
+    totalWeights += currentWeight;
+    if (currentWeight > maxWeight) {
+        maxWeight = currentWeight;
+        maxWeightSkillNumber = 17;
+    }
+
+    logger::debug("maxWeight: {}, maxWeightSkillNumber: {}, totalWeights: {}", maxWeight, maxWeightSkillNumber, totalWeights);
 
     RE::ACTOR_BASE_DATA thisNpcBaseData = someNPC->actorData;
 
+    int adjustLevel;
     int maxLvl = thisNpcBaseData.calcLevelMax;
-    int minLvl = thisNpcBaseData.calcLevelMin;
     bool isUnique = someNPC->IsUnique();
 
-
     if (isUnique) {
+        adjustLevel = maxLvl;
         logger::debug(
-            "This actor does lvl with PC and is unique, returning skill level adjusted to its max lvl, result: {}",
-            classSkillWeight * maxLvl);
-        return classSkillWeight * maxLvl;
+            "This actor does lvl with PC and is unique, skill will be adjusted to its max lvl of: {}", adjustLevel);
+    } else {
+        // move this shet out of func
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distrib(playerLevel, maxLvl);
+
+        int adjustLevel = distrib(gen);
+        logger::debug(
+            "This actor does lvl with PC and is NOt unique,  skill will be adjusted to random between current "
+            "player lvl and its max lvl, res: {}", adjustLevel);
     }
 
-    //move this shet out of func
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(playerLevel, maxLvl);
+    int totalSkillPoints = skillsPerLevelSetting * adjustLevel;
+    logger::debug("totalSkillPoints: {}", totalSkillPoints);
 
-    int adjustLevel = distrib(gen);
+    float weightShare = static_cast<float>(maxWeight) / totalWeights;
+    logger::debug("weightShare: {}", weightShare);
 
-    logger::debug("This actor does lvl with PC and is NOt unique, returning skill level adjusted to its random between current player lvl and its max lvl, result: {}",
-        classSkillWeight * adjustLevel);
+    int calculatedSkillLevel = skillBaseSetting + (totalSkillPoints * weightShare);
 
-    return static_cast<float>(classSkillWeight * adjustLevel);
+    logger::debug("Adjusted skill level: {}", calculatedSkillLevel);
+
+    resultArr.push_back(calculatedSkillLevel);
+    resultArr.push_back(maxWeightSkillNumber);
+
+    return resultArr;
     
 }
 
@@ -344,6 +492,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     //vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
     vm->RegisterFunction("GetActiveEffectCommandedActor", "ED_SKSEnativebindings", GetActiveEffectCommandedActor);
     vm->RegisterFunction("IncreaseActiveEffectDuration", "ED_SKSEnativebindings", IncreaseActiveEffectDuration);
+    vm->RegisterFunction("GetAdjustedAvForComparison", "ED_SKSEnativebindings", GetAdjustedAvForComparison);
     logger::info("Papyrus functions bound!");
     return true;
 }
