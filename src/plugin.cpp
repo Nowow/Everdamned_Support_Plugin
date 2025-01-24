@@ -218,7 +218,6 @@ void IncreaseActiveEffectDuration(RE::StaticFunctionTag*, RE::ActiveEffect* theE
 
 float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int skillNumber, int playerLevel) {
     RE::TESNPC* someNPC = thisActor->GetActorBase();
-
     RE::CLASS_DATA thisNpcClass = someNPC->npcClass->data;
 
     int classSkillWeight;
@@ -297,11 +296,17 @@ float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, i
             classSkillWeight = thisNpcClass.skillWeights.enchanting;
             currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kEnchanting];
             break;
+        default:
+            logger::debug("GetAdjustedAvForComparison was not provided with valid skillNumber, was provided: {}", skillNumber);
+            return 0.0;
     }
+
+    logger::debug("Procured class skill Weight: {}, current skill level: {}", classSkillWeight, currentSkillLevel);
 
     bool lvlsWithPC = someNPC->HasPCLevelMult();
 
     if (!lvlsWithPC) {
+        logger::debug("This actor does not lvl with PC, returning current skill level of {}", currentSkillLevel);
         return currentSkillLevel;
     }
 
@@ -313,6 +318,9 @@ float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, i
 
 
     if (isUnique) {
+        logger::debug(
+            "This actor does lvl with PC and is unique, returning skill level adjusted to its max lvl, result: {}",
+            classSkillWeight * maxLvl);
         return classSkillWeight * maxLvl;
     }
 
@@ -323,7 +331,10 @@ float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, i
 
     int adjustLevel = distrib(gen);
 
-    return classSkillWeight * adjustLevel;
+    logger::debug("This actor does lvl with PC and is NOt unique, returning skill level adjusted to its random between current player lvl and its max lvl, result: {}",
+        classSkillWeight * adjustLevel);
+
+    return static_cast<float>(classSkillWeight * adjustLevel);
     
 }
 
