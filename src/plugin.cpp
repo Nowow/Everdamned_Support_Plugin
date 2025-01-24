@@ -313,16 +313,17 @@ float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, i
 
 
     if (isUnique) {
-        return currentSkillLevel * maxLvl;
+        return classSkillWeight * maxLvl;
     }
 
+    //move this shet out of func
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distrib(playerLevel, maxLvl);
 
-    int adjustLevel = 
+    int adjustLevel = distrib(gen);
 
-    return
+    return classSkillWeight * adjustLevel;
     
 }
 
