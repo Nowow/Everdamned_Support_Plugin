@@ -2,6 +2,7 @@
 
 //#include "include\PerkEntryPointExtenderAPI.h"
 #include <spdlog/sinks/basic_file_sink.h>
+#include <random>
 
 namespace logger = SKSE::log;
 
@@ -213,6 +214,116 @@ void IncreaseActiveEffectDuration(RE::StaticFunctionTag*, RE::ActiveEffect* theE
         theEffect->duration += abs(delta);
         logger::debug("This effect's duration after increase: {}", theEffect->duration);
     }
+}
+
+float GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int skillNumber, int playerLevel) {
+    RE::TESNPC* someNPC = thisActor->GetActorBase();
+
+    RE::CLASS_DATA thisNpcClass = someNPC->npcClass->data;
+
+    int classSkillWeight;
+    float currentSkillLevel;
+
+    switch (skillNumber) {
+        case 0:
+            classSkillWeight = thisNpcClass.skillWeights.oneHanded;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kOneHanded];
+            break;
+        case 1:
+            classSkillWeight = thisNpcClass.skillWeights.twoHanded;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kTwoHanded];
+            break;
+        case 2:
+            classSkillWeight = thisNpcClass.skillWeights.archery;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kArchery];
+            break;
+        case 3:
+            classSkillWeight = thisNpcClass.skillWeights.block;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kBlock];
+            break;
+        case 4:
+            classSkillWeight = thisNpcClass.skillWeights.smithing;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kSmithing];
+            break;
+        case 5:
+            classSkillWeight = thisNpcClass.skillWeights.heavyArmor;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kHeavyArmor];
+            break;
+        case 6:
+            classSkillWeight = thisNpcClass.skillWeights.lightArmor;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kLightArmor];
+            break;
+        case 7:
+            classSkillWeight = thisNpcClass.skillWeights.pickpocket;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kPickpocket];
+            break;
+        case 8:
+            classSkillWeight = thisNpcClass.skillWeights.lockpicking;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kLockpicking];
+            break;
+        case 9:
+            classSkillWeight = thisNpcClass.skillWeights.sneak;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kSneak];
+            break;
+        case 10:
+            classSkillWeight = thisNpcClass.skillWeights.alchemy;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kAlchemy];
+            break;
+        case 11:
+            classSkillWeight = thisNpcClass.skillWeights.speech;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kSpeech];
+            break;
+        case 12:
+            classSkillWeight = thisNpcClass.skillWeights.alteration;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kAlteration];
+            break;
+        case 13:
+            classSkillWeight = thisNpcClass.skillWeights.conjuration;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kConjuration];
+            break;
+        case 14:
+            classSkillWeight = thisNpcClass.skillWeights.destruction;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kDestruction];
+            break;
+        case 15:
+            classSkillWeight = thisNpcClass.skillWeights.illusion;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kIllusion];
+            break;
+        case 16:
+            classSkillWeight = thisNpcClass.skillWeights.restoration;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kRestoration];
+            break;
+        case 17:
+            classSkillWeight = thisNpcClass.skillWeights.enchanting;
+            currentSkillLevel = *thisActor->GetActorRuntimeData().avStorage.baseValues[RE::ActorValue::kEnchanting];
+            break;
+    }
+
+    bool lvlsWithPC = someNPC->HasPCLevelMult();
+
+    if (!lvlsWithPC) {
+        return currentSkillLevel;
+    }
+
+    RE::ACTOR_BASE_DATA thisNpcBaseData = someNPC->actorData;
+
+    int maxLvl = thisNpcBaseData.calcLevelMax;
+    int minLvl = thisNpcBaseData.calcLevelMin;
+    bool isUnique = someNPC->IsUnique();
+
+
+    if (isUnique) {
+        return currentSkillLevel * maxLvl;
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(playerLevel, maxLvl);
+
+    int adjustLevel = 
+
+    return
+    
 }
 
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
