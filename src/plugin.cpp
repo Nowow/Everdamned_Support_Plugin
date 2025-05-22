@@ -6,6 +6,10 @@
 
 namespace logger = SKSE::log;
 
+RE::BGSKeyword* protectedKeyword;
+RE::TESEffectShader* protectedShader;
+
+
 void SetupLog() {
     auto logsFolder = SKSE::log::log_directory();
     if (!logsFolder) SKSE::stl::report_and_fail("SKSE log_directory not provided, logs disabled.");
@@ -19,8 +23,159 @@ void SetupLog() {
     spdlog::flush_on(spdlog::level::trace);
 }
 
+struct ShaderStuff {
+    struct ShaderReferenceEffectMy {
+        
+
+        static void thunk(RE::ShaderReferenceEffect* someShader) {
+            auto* someRef = someShader->target.get().get();
+            auto shaderForm = someShader->effectData;
+
+            //logger::debug("Shader fill texture name: {}", shaderForm->fillTexture.textureName);
+
+            if (!(someRef->IsPlayerRef())) {
+                logger::debug("Shader is applied to something other than player, applying");
+                func(someShader);
+            } 
+            else if (someShader->effectData == protectedShader) {
+                logger::debug("Shader is applied to player and is protected, applying");
+                func(someShader);
+            } 
+            else if (someRef->HasKeyword(protectedKeyword)) {
+                logger::debug("Shader is applied to player, is not protected, but player has protected keyword, switching off membrane if needed");
+
+                bool hasMembrane = !(shaderForm->data.flags.any(RE::EffectShaderData::Flags::kDisableTextureShader));
+                
+                if (hasMembrane) {
+                    logger::debug("Shader has membrane, not applying");
+                } else {
+                    logger::debug("Shader has no membrane, applying");
+                    func(someShader);
+                }
+
+            } else {
+                logger::debug("Shader is applied to player, is not protected, player has no keyword, applying!");
+                func(someShader);
+            }
+            
+        }
+        static inline REL::Relocation<decltype(thunk)> func;
+    };
+
+
+
+    static void InstallHook() {
+        logger::debug("Installing shader hooks");
+        
+
+        if (protectedKeyword == nullptr) {
+            logger::debug("Protected keyword form was not established, not installing shader hooks!");
+            return;
+        } else if (protectedShader == nullptr) {
+            logger::debug("Protected shader form was not established, not installing shader hooks!");
+            return;
+        }
+        
+        //REL::Relocation<std::uintptr_t> target{RELOCATION_ID(34132, 34912), REL::Relocate(0x0, 0x0)};
+        //stl::write_thunk_call<ShaderReferenceEffectMy>(target.address());
+
+        stl::write_vfunc<RE::ShaderReferenceEffect, 0x36, ShaderReferenceEffectMy>();
+        
+        logger::debug("Installed shader hooks");
+    };
+
+    static void ReadForms() { 
+        logger::debug("Skyrim Data has loaded, getting protected shader and protected keyword forms");
+
+        auto dataHandler = RE::TESDataHandler::GetSingleton();
+        if (!dataHandler) {
+            logger::error("TESDataHandler is null! No forms will be captured and shader hook will not be installed");
+            return;
+        }
+
+        const auto modInfo = dataHandler->LookupModByName("Everdamned.esp");
+        //if (!modInfo) {
+        //    logger::error("Plugin Everdamned.esp not found or not loaded!");
+        //    return;
+        //}
+
+        //std::uint32_t keywordFormID = (modInfo->GetPartialIndex() << 24) | (828114 & 0x00FFFFFF);
+        //std::uint32_t shaderFormID = (modInfo->GetPartialIndex() << 24) | (823012 & 0x00FFFFFF);
+
+        //logger::error("Keyword Form id: {0:x}", keywordFormID);
+        //logger::error("Shader Form id: {0:x}", shaderFormID);
+
+        
+        //protectedKeyword = RE::TESForm::LookupByID(keywordFormID)->As<RE::BGSKeyword>();
+        //protectedShader = RE::TESForm::LookupByID(shaderFormID)->As<RE::TESEffectShader>();
+
+        protectedKeyword = RE::TESForm::LookupByEditorID("ED_Mechanics_Keyword_NecroticFleshCIF")->As<RE::BGSKeyword>();
+        protectedShader = RE::TESForm::LookupByEditorID("ed_Test_Art_Shader_MagicArmorEbonyFleshFXS")->As<RE::TESEffectShader>();
+
+    }
+};
+
+
+void StopAllShadersExceptThis(RE::StaticFunctionTag*, RE::TESEffectShader* a_effectShader, RE::BGSKeyword* someKeyword, RE::TESEffectShader* emptyTextureShader) {
+
+    protectedKeyword = someKeyword;
+    protectedShader = a_effectShader;
+
+    logger::debug("keyword form id: {0:x}", someKeyword->GetFormID());
+    logger::debug("shader form id: {0:x}", protectedShader->GetFormID());
+    
+
+    //emptyShader = emptyTextureShader;
+    //emptytexture = RE::NiTexturePtr( a_effectShader->fillTexture.)
+    ;
+
+
+    //if (!a_effectShader) {
+    //    logger::info("EffectShader is None");
+    //    return;
+    //}
+    //auto playerRef = RE::PlayerCharacter::GetSingleton();
+    //const auto playerRefHandle = playerRef->CreateRefHandle();
+    //
+
+    //bool myShaderFound = false;
+    //RE::ShaderReferenceEffect* myShaderEffect;
+
+    //if (const auto processLists = RE::ProcessLists::GetSingleton()) {
+    //    processLists->ForEachShaderEffect([&](RE::ShaderReferenceEffect& a_shaderEffect) {
+    //        if (a_shaderEffect.target == playerRefHandle) {
+    //            if (a_shaderEffect.effectData != a_effectShader) {
+    //                a_shaderEffect.finished = true;
+    //                a_shaderEffect.Detach();
+    //                logger::info("Removed shader!");
+    //            } else {
+    //                logger::info("My shader effect found");
+    //                myShaderEffect = &a_shaderEffect;
+    //                myShaderFound = true;
+    //            }
+    //        }
+    //        return RE::BSContainer::ForEachResult::kContinue;
+    //    });
+
+    //}
+    //if (myShaderFound) {
+    //    //using Flags = RE::EffectShaderData::Flags;
+    //    
+    //    //playerRef->ApplyEffectShader(a_effectShader);
+    //    logger::info("Aooo");
+
+    //    myShaderEffect->finished = false;
+    //    myShaderEffect->Update(0.0);
+    //    playerRef->Update3DModel();
+
+    //    //RE::NiAVObject* aaa;
+    //    //aaa->GetUserData();
+    //}
+}
+
 
 struct Hooks {
+
     struct CommandedActorLimitHook {
         static void thunk(RE::BGSPerkEntry::EntryPoint entry_point, RE::Actor* target, RE::MagicItem* a_spell, void* out) {
             //logger::info("We in CommandedActorLimitHook func body");
@@ -127,9 +282,19 @@ struct Hooks {
         static inline REL::Relocation<decltype(thunk)> func;
     };
     static void Install() {
+
+
+
+
         REL::Relocation<std::uintptr_t> functionCommandedActorLimitHook{RELOCATION_ID(38993, 40056),
                                                                         REL::Relocate(0xA1, 0xEC)};
         stl::write_thunk_call<CommandedActorLimitHook>(functionCommandedActorLimitHook.address());
+
+
+
+
+
+
 
         REL::Relocation<std::uintptr_t> functionCommandedActorHook{RELOCATION_ID(38904, 39950),
                                                                    REL::Relocate(0x14B, 0x12B)};
@@ -150,24 +315,14 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
             logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
         }
 
+        
+
+    } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
+        ShaderStuff::ReadForms();
+        ShaderStuff::InstallHook();
     }
 }
 
-//std::string MyNativeFunction(RE::StaticFunctionTag*, int numba) {
-//    logger::info("MyNativeFunction in C++ got called!, numba was: {}", numba);
-//    return "Hello from C++!";
-//}
-//
-//std::string GetSpellAndReturnItsName(RE::StaticFunctionTag*, RE::SpellItem* theSpell) {
-//    logger::info("The spell name: {}", theSpell->GetFullName());
-//    return theSpell->GetFullName();
-//}
-//
-//RE::Actor* GetEffectAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
-//    logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
-//    logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
-//    return theEffect->caster.get().get();
-//}
 
 RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
     //logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
@@ -463,7 +618,7 @@ RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* 
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(playerLevel, maxLvl);
 
-        int adjustLevel = distrib(gen);
+        adjustLevel = distrib(gen);
         logger::debug(
             "This actor does lvl with PC and is NOt unique,  skill will be adjusted to random between current "
             "player lvl and its max lvl, res: {}", adjustLevel);
@@ -493,6 +648,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("GetActiveEffectCommandedActor", "ED_SKSEnativebindings", GetActiveEffectCommandedActor);
     vm->RegisterFunction("IncreaseActiveEffectDuration", "ED_SKSEnativebindings", IncreaseActiveEffectDuration);
     vm->RegisterFunction("GetAdjustedAvForComparison", "ED_SKSEnativebindings", GetAdjustedAvForComparison);
+    vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     logger::info("Papyrus functions bound!");
     return true;
 }
