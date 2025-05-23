@@ -23,9 +23,34 @@ void SetupLog() {
     spdlog::flush_on(spdlog::level::trace);
 }
 
+
+struct SprintPolice {
+    struct SprintHandlerMy {
+
+        static bool thunk(RE::InputEvent* a_event) {
+
+            //auto playerRef = RE::PlayerCharacter::GetSingleton();
+            logger::debug("Sprint hook fired!");
+            return false;
+
+            //return func(a_event);
+        }
+
+        static inline REL::Relocation<decltype(thunk)> func;
+
+    };
+
+    static void Install() {
+        logger::debug("Installing sprint hooks");
+
+        stl::write_vfunc<RE::SprintHandler, 0x04, SprintHandlerMy>();
+
+        logger::debug("Installed sprint hooks");
+    };
+};
+
 struct ShaderStuff {
     struct ShaderReferenceEffectMy {
-        
 
         static void thunk(RE::ShaderReferenceEffect* someShader) {
             auto* someRef = someShader->target.get().get();
@@ -93,7 +118,7 @@ struct ShaderStuff {
             return;
         }
 
-        const auto modInfo = dataHandler->LookupModByName("Everdamned.esp");
+//        const auto modInfo = dataHandler->LookupModByName("Everdamned.esp");
         //if (!modInfo) {
         //    logger::error("Plugin Everdamned.esp not found or not loaded!");
         //    return;
@@ -283,18 +308,9 @@ struct Hooks {
     };
     static void Install() {
 
-
-
-
         REL::Relocation<std::uintptr_t> functionCommandedActorLimitHook{RELOCATION_ID(38993, 40056),
                                                                         REL::Relocate(0xA1, 0xEC)};
         stl::write_thunk_call<CommandedActorLimitHook>(functionCommandedActorLimitHook.address());
-
-
-
-
-
-
 
         REL::Relocation<std::uintptr_t> functionCommandedActorHook{RELOCATION_ID(38904, 39950),
                                                                    REL::Relocate(0x14B, 0x12B)};
@@ -315,7 +331,7 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
             logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
         }
 
-        
+        SprintPolice::Install();
 
     } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         ShaderStuff::ReadForms();
