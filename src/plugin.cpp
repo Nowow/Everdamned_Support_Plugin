@@ -6,8 +6,9 @@
 
 namespace logger = SKSE::log;
 
-RE::BGSKeyword* protectedKeyword;
-RE::TESEffectShader* protectedShader;
+RE::BGSKeyword* necroticFleshKeyword;
+RE::TESEffectShader* necroticFleshShader;
+RE::BGSPerk* ferociousSurgePerk;
 
 
 void SetupLog() {
@@ -27,26 +28,50 @@ void SetupLog() {
 struct SprintPolice {
     struct SprintHandlerMy {
 
-        static bool thunk(RE::InputEvent* a_event) {
+        static void thunk(RE::ButtonEvent* a_event, RE::PlayerControlsData* a_data) {
 
-            //auto playerRef = RE::PlayerCharacter::GetSingleton();
-            logger::debug("Sprint hook fired!");
-            return false;
+            auto playerRef = RE::PlayerCharacter::GetSingleton();
+            bool inFerociousSurge = playerRef->HasPerk(ferociousSurgePerk);
 
-            //return func(a_event);
+            if (inFerociousSurge) {
+                logger::debug("Sprint button detected Ferocious Surge, letting sprint!");
+                func(a_event, a_data);
+                return;
+            }
+
+            bool inNecroticFlesh = playerRef->HasKeyword(necroticFleshKeyword);
+
+            if (inNecroticFlesh) {
+                logger::debug("Sprint button detected Necrotic Flesh without Ferocious Surge, no sprint!");
+                return;
+            }
+
+            func(a_event, a_data);
         }
 
         static inline REL::Relocation<decltype(thunk)> func;
 
     };
 
-    static void Install() {
+    static void InstallHook() {
         logger::debug("Installing sprint hooks");
 
+        
+        if (necroticFleshKeyword == nullptr) {
+            logger::debug("Necrotic Flesh keyword form was not established, not installing sprint hooks!");
+            return;
+        }
+        if (ferociousSurgePerk == nullptr) {
+            logger::debug("Ferocious surge perk form was not established, not installing sprint hooks!");
+            return;
+        }
+        
         stl::write_vfunc<RE::SprintHandler, 0x04, SprintHandlerMy>();
 
         logger::debug("Installed sprint hooks");
     };
+
+   
 };
 
 struct ShaderStuff {
@@ -62,11 +87,11 @@ struct ShaderStuff {
                 logger::debug("Shader is applied to something other than player, applying");
                 func(someShader);
             } 
-            else if (someShader->effectData == protectedShader) {
+            else if (someShader->effectData == necroticFleshShader) {
                 logger::debug("Shader is applied to player and is protected, applying");
                 func(someShader);
             } 
-            else if (someRef->HasKeyword(protectedKeyword)) {
+            else if (someRef->HasKeyword(necroticFleshKeyword)) {
                 logger::debug("Shader is applied to player, is not protected, but player has protected keyword, switching off membrane if needed");
 
                 bool hasMembrane = !(shaderForm->data.flags.any(RE::EffectShaderData::Flags::kDisableTextureShader));
@@ -93,11 +118,11 @@ struct ShaderStuff {
         logger::debug("Installing shader hooks");
         
 
-        if (protectedKeyword == nullptr) {
-            logger::debug("Protected keyword form was not established, not installing shader hooks!");
+        if (necroticFleshKeyword == nullptr) {
+            logger::debug("Necrotic Flesh keyword form was not established, not installing shader hooks!");
             return;
-        } else if (protectedShader == nullptr) {
-            logger::debug("Protected shader form was not established, not installing shader hooks!");
+        } else if (necroticFleshShader == nullptr) {
+            logger::debug("Necrotic Flesh shader form was not established, not installing shader hooks!");
             return;
         }
         
@@ -110,7 +135,7 @@ struct ShaderStuff {
     };
 
     static void ReadForms() { 
-        logger::debug("Skyrim Data has loaded, getting protected shader and protected keyword forms");
+        logger::debug("Skyrim Data has loaded, getting necessary forms");
 
         auto dataHandler = RE::TESDataHandler::GetSingleton();
         if (!dataHandler) {
@@ -134,8 +159,9 @@ struct ShaderStuff {
         //protectedKeyword = RE::TESForm::LookupByID(keywordFormID)->As<RE::BGSKeyword>();
         //protectedShader = RE::TESForm::LookupByID(shaderFormID)->As<RE::TESEffectShader>();
 
-        protectedKeyword = RE::TESForm::LookupByEditorID("ED_Mechanics_Keyword_NecroticFleshCIF")->As<RE::BGSKeyword>();
-        protectedShader = RE::TESForm::LookupByEditorID("ed_Test_Art_Shader_MagicArmorEbonyFleshFXS")->As<RE::TESEffectShader>();
+        necroticFleshKeyword = RE::TESForm::LookupByEditorID("ED_Mechanics_Keyword_NecroticFleshCIF")->As<RE::BGSKeyword>();
+        necroticFleshShader = RE::TESForm::LookupByEditorID("ed_Test_Art_Shader_MagicArmorEbonyFleshFXS")->As<RE::TESEffectShader>();
+        ferociousSurgePerk = RE::TESForm::LookupByEditorID("ED_VampirePowers_Pw_FerociousSurge_Perk")->As<RE::BGSPerk>();
 
     }
 };
@@ -143,12 +169,6 @@ struct ShaderStuff {
 
 void StopAllShadersExceptThis(RE::StaticFunctionTag*, RE::TESEffectShader* a_effectShader, RE::BGSKeyword* someKeyword, RE::TESEffectShader* emptyTextureShader) {
 
-    protectedKeyword = someKeyword;
-    protectedShader = a_effectShader;
-
-    logger::debug("keyword form id: {0:x}", someKeyword->GetFormID());
-    logger::debug("shader form id: {0:x}", protectedShader->GetFormID());
-    
 
     //emptyShader = emptyTextureShader;
     //emptytexture = RE::NiTexturePtr( a_effectShader->fillTexture.)
@@ -331,11 +351,12 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
             logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
         }
 
-        SprintPolice::Install();
+        
 
     } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         ShaderStuff::ReadForms();
         ShaderStuff::InstallHook();
+        SprintPolice::InstallHook();
     }
 }
 
