@@ -81,9 +81,11 @@ struct ShaderStuff {
             auto* someRef = someShader->target.get().get();
             auto shaderForm = someShader->effectData;
 
-            //logger::debug("Shader fill texture name: {}", shaderForm->fillTexture.textureName);
-
-            if (!(someRef->IsPlayerRef())) {
+            if (someRef == nullptr) {
+                logger::debug("Encountered a nullptr, default behavior - applying");
+                func(someShader);
+            }
+            else if (!(someRef->IsPlayerRef())) {
                 logger::debug("Shader is applied to something other than player, applying");
                 func(someShader);
             } 
