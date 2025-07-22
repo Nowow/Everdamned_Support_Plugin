@@ -680,6 +680,21 @@ RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* 
     
 }
 
+RE::TESForm* LookupSomeFormByEditorID(RE::StaticFunctionTag*, std::string editorID) {
+    logger::debug("EditorID string that arrived: {}", editorID);
+    auto someForm = RE::TESForm::LookupByEditorID(editorID);
+
+    
+
+    if (someForm == nullptr) {
+        logger::debug("Looked up form is nullptr");
+    } else {
+        logger::debug("Looked up form is: {}", someForm->GetName());
+    }
+
+    return someForm;
+}
+
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     //vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
     //vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
@@ -688,6 +703,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("IncreaseActiveEffectDuration", "ED_SKSEnativebindings", IncreaseActiveEffectDuration);
     vm->RegisterFunction("GetAdjustedAvForComparison", "ED_SKSEnativebindings", GetAdjustedAvForComparison);
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
+    vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
     logger::info("Papyrus functions bound!");
     return true;
 }
