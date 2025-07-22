@@ -37,11 +37,12 @@ endif()
 # Otherwise, you can set OUTPUT_FOLDER to any place you'd like :)
 set(OUTPUT_FOLDER "F:/ModOrganizer2/mods/Sacrosanct tweaks")
 
-#set(headers
-#    src/include/PerkEntryPointExtenderAPI.h)
+set(headers
+        src/logger.h)
 
 set(sources
-        src/plugin.cpp)
+        src/plugin.cpp
+        src/logger.cpp)
 
 
 

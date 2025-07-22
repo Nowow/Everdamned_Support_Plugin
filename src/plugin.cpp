@@ -4,25 +4,13 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <random>
 
+#include "logger.h"
+
 namespace logger = SKSE::log;
 
 RE::BGSKeyword* necroticFleshKeyword;
 RE::TESEffectShader* necroticFleshShader;
 RE::BGSPerk* ferociousSurgePerk;
-
-
-void SetupLog() {
-    auto logsFolder = SKSE::log::log_directory();
-    if (!logsFolder) SKSE::stl::report_and_fail("SKSE log_directory not provided, logs disabled.");
-    auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-    auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
-    //RE::ConsoleLog::GetSingleton()->Print(logFilePath.string().c_str());
-    auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
-    auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
-    spdlog::set_default_logger(std::move(loggerPtr));
-    spdlog::set_level(spdlog::level::trace);
-    spdlog::flush_on(spdlog::level::trace);
-}
 
 
 struct SprintPolice {
@@ -339,28 +327,6 @@ struct Hooks {
         stl::write_thunk_call<CommandedActorHook>(functionCommandedActorHook.address());
     };
 };
-
-
-void MessageListener(SKSE::MessagingInterface::Message* message) {
-    if (message->type == SKSE::MessagingInterface::kPostLoad) {
-
-        logger::info("All plugins have loaded, checking if SummonActorLimitOverhaul is present");
-        if (GetModuleHandle(L"SummonActorLimitOverhaul.dll") == nullptr) {
-            logger::info("No SummonActorLimitOverhaul detected, installing hooks...");
-            Hooks::Install();
-            logger::info("EverdamnedSupportPlugin hooks were installed!");
-        } else {
-            logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
-        }
-
-        
-
-    } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
-        ShaderStuff::ReadForms();
-        ShaderStuff::InstallHook();
-        SprintPolice::InstallHook();
-    }
-}
 
 
 RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
@@ -706,6 +672,28 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
     logger::info("Papyrus functions bound!");
     return true;
+}
+
+
+void MessageListener(SKSE::MessagingInterface::Message* message) {
+    if (message->type == SKSE::MessagingInterface::kPostLoad) {
+        logger::info("All plugins have loaded, checking if SummonActorLimitOverhaul is present");
+        if (GetModuleHandle(L"SummonActorLimitOverhaul.dll") == nullptr) {
+            logger::info("No SummonActorLimitOverhaul detected, installing hooks...");
+            Hooks::Install();
+            logger::info("EverdamnedSupportPlugin hooks were installed!");
+        } else {
+            logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
+        }
+
+    } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
+        ShaderStuff::ReadForms();
+        ShaderStuff::InstallHook();
+        SprintPolice::InstallHook();
+
+        auto artobjects = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSArtObject>();
+        logger::debug("There are {} many art objects: ", artobjects.size());
+    }
 }
 
 SKSEPluginLoad(const SKSE::LoadInterface* skse) {
