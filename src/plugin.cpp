@@ -3,6 +3,7 @@
 //#include "include\PerkEntryPointExtenderAPI.h"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <random>
+#include <string>
 
 #include "logger.h"
 
@@ -647,7 +648,7 @@ RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* 
 }
 
 RE::TESForm* LookupSomeFormByEditorID(RE::StaticFunctionTag*, std::string editorID) {
-    logger::debug("EditorID string that arrived: {}", editorID);
+    //logger::debug("EditorID string that arrived: {}", editorID);
     auto someForm = RE::TESForm::LookupByEditorID(editorID);
 
     
@@ -655,11 +656,98 @@ RE::TESForm* LookupSomeFormByEditorID(RE::StaticFunctionTag*, std::string editor
     if (someForm == nullptr) {
         logger::debug("Looked up form is nullptr");
     } else {
-        logger::debug("Looked up form is: {}", someForm->GetName());
+    //    logger::debug("Looked up form is: {}", someForm->GetName());
     }
 
     return someForm;
 }
+
+
+RE::BSTArray<RE::BGSArtObject*, RE::BSTArrayHeapAllocator> art_objects;
+RE::BSTArray<RE::BGSArtObject*, RE::BSTArrayHeapAllocator> art_objects_filtered;
+
+
+void SetupArtObjectArray(RE::StaticFunctionTag*, std::string ModName) {
+
+    logger::debug("Setup Art object array was called for this mod: {}", ModName);
+
+    art_objects.clear();
+    art_objects_filtered.clear();
+
+    art_objects = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSArtObject>();
+
+    logger::debug("There are {} many art objects total", art_objects.size());
+
+    int recordsSkipped = 0;
+    int recordsNotSkipped = 0;
+
+    std::vector<std::string_view> uniqueModNames;
+
+    for (auto* artItem : art_objects) {
+
+        const auto someModName = std::string{artItem->GetFile(0)->GetFilename()};
+
+        std::string TheModName = someModName;
+
+        std::transform(TheModName.begin(), TheModName.end(), TheModName.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+
+        /*auto found = (std::find(uniqueModNames.begin(), uniqueModNames.end(), someModName)) != uniqueModNames.end();
+
+        if (!found) {
+            logger::debug("Unique mod name: {}", someModName);
+            uniqueModNames.push_back(someModName);
+        }*/
+
+        if (artItem->data.artType != RE::BGSArtObject::ArtType::kMagicHitEffect) {
+            recordsSkipped++;
+            continue;   
+        }
+
+        if (TheModName != ModName) {
+            recordsSkipped++;
+            continue;
+        }
+        recordsNotSkipped++;
+        art_objects_filtered.push_back(artItem);
+    }
+
+    logger::debug("Art objects valid: {}", recordsNotSkipped);
+    logger::debug("Art objects filtered array size: {}", art_objects_filtered.size());
+    logger::debug("Art objects skipped: {}", recordsSkipped);
+
+    
+}
+
+RE::BGSArtObject* GetArtObjectByIndex(RE::StaticFunctionTag*, int artIndex) {
+
+
+    if (artIndex < 0) {
+        logger::debug("Art object index is < 0, returning nullptr!");
+        return nullptr;
+    }
+
+    RE::BGSArtObject* theArt = art_objects_filtered[artIndex];
+
+    logger::debug("Retrieving art object number: {}", artIndex);
+    return theArt;
+
+    //const auto modName = theArt->GetFile(0)->GetFilename();
+
+    
+
+    //logger::debug("This Art mod is: {}", modName);
+
+    //if (theArt->data.artType != RE::BGSArtObject::ArtType::kMagicHitEffect) {
+    //    logger::debug("Skipping Art Object number {} because not Hit Effect art", artIndex);
+    //    return nullptr;
+    //}
+
+    
+
+}
+
+
 
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     //vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
@@ -670,6 +758,8 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("GetAdjustedAvForComparison", "ED_SKSEnativebindings", GetAdjustedAvForComparison);
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
+    vm->RegisterFunction("GetArtObjectByIndex", "ED_SKSEnativebindings", GetArtObjectByIndex);
+    vm->RegisterFunction("SetupArtObjectArray", "ED_SKSEnativebindings", SetupArtObjectArray);
     logger::info("Papyrus functions bound!");
     return true;
 }
@@ -691,8 +781,6 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
         ShaderStuff::InstallHook();
         SprintPolice::InstallHook();
 
-        auto artobjects = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSArtObject>();
-        logger::debug("There are {} many art objects: ", artobjects.size());
     }
 }
 
