@@ -665,30 +665,25 @@ RE::TESForm* LookupSomeFormByEditorID(RE::StaticFunctionTag*, std::string editor
 
 RE::BSTArray<RE::BGSArtObject*, RE::BSTArrayHeapAllocator> art_objects;
 RE::BSTArray<RE::BGSArtObject*, RE::BSTArrayHeapAllocator> art_objects_filtered;
+std::map<std::string, RE::BSTArray<RE::BGSArtObject*, RE::BSTArrayHeapAllocator>> art_objects_by_mod;
 
+void SetupArtObjectArray(RE::StaticFunctionTag*) {
 
-void SetupArtObjectArray(RE::StaticFunctionTag*, std::string ModName) {
-
-    logger::debug("Setup Art object array was called for this mod: {}", ModName);
+    logger::debug("Setup Art object array was called");
 
     art_objects.clear();
-    art_objects_filtered.clear();
+    //art_objects_filtered.clear();
 
     art_objects = RE::TESDataHandler::GetSingleton()->GetFormArray<RE::BGSArtObject>();
 
     logger::debug("There are {} many art objects total", art_objects.size());
 
     int recordsSkipped = 0;
-    int recordsNotSkipped = 0;
-
-    std::vector<std::string_view> uniqueModNames;
 
     for (auto* artItem : art_objects) {
 
         const auto someModName = std::string{artItem->GetFile(0)->GetFilename()};
-
         std::string TheModName = someModName;
-
         std::transform(TheModName.begin(), TheModName.end(), TheModName.begin(),
                        [](unsigned char c) { return std::tolower(c); });
 
@@ -704,22 +699,35 @@ void SetupArtObjectArray(RE::StaticFunctionTag*, std::string ModName) {
             continue;   
         }
 
-        if (TheModName != ModName) {
+        /*if (TheModName != ModName) {
             recordsSkipped++;
             continue;
+        }*/
+
+        if (!(art_objects_by_mod.contains(TheModName))) {
+            art_objects_by_mod[TheModName];
+            
         }
-        recordsNotSkipped++;
-        art_objects_filtered.push_back(artItem);
+        art_objects_by_mod[TheModName].push_back(artItem);
+
+        
+        //art_objects_filtered.push_back(artItem);
     }
 
-    logger::debug("Art objects valid: {}", recordsNotSkipped);
-    logger::debug("Art objects filtered array size: {}", art_objects_filtered.size());
+    //logger::debug("Art objects valid: {}", recordsNotSkipped);
+    //logger::debug("Art objects filtered array size: {}", art_objects_filtered.size());
+    
     logger::debug("Art objects skipped: {}", recordsSkipped);
+
+    for (const auto& pair : art_objects_by_mod) {
+        logger::debug("Mod {} has this many valid art objects: {}", pair.first, pair.second.size());
+
+    }
 
     
 }
 
-RE::BGSArtObject* GetArtObjectByIndex(RE::StaticFunctionTag*, int artIndex) {
+RE::BGSArtObject* GetArtObjectByIndex(RE::StaticFunctionTag*, std::string ModName, int artIndex) {
 
 
     if (artIndex < 0) {
@@ -727,23 +735,19 @@ RE::BGSArtObject* GetArtObjectByIndex(RE::StaticFunctionTag*, int artIndex) {
         return nullptr;
     }
 
-    RE::BGSArtObject* theArt = art_objects_filtered[artIndex];
+    std::transform(ModName.begin(), ModName.end(), ModName.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+
+    if (!(art_objects_by_mod.contains(ModName))) {
+        logger::debug("Mod {} is not contained in the map!", ModName);
+        return nullptr;
+    }
+    
+    //RE::BGSArtObject* theArt = art_objects_filtered[artIndex];
+    RE::BGSArtObject* theArt = art_objects_by_mod[ModName][artIndex];
 
     logger::debug("Retrieving art object number: {}", artIndex);
     return theArt;
-
-    //const auto modName = theArt->GetFile(0)->GetFilename();
-
-    
-
-    //logger::debug("This Art mod is: {}", modName);
-
-    //if (theArt->data.artType != RE::BGSArtObject::ArtType::kMagicHitEffect) {
-    //    logger::debug("Skipping Art Object number {} because not Hit Effect art", artIndex);
-    //    return nullptr;
-    //}
-
-    
 
 }
 
