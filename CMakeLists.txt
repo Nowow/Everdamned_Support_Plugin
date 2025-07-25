@@ -38,11 +38,13 @@ endif()
 set(OUTPUT_FOLDER "F:/ModOrganizer2/mods/Sacrosanct tweaks")
 
 set(headers
-        src/logger.h)
+        src/logger.h
+        src/form_browser.h)
 
 set(sources
         src/plugin.cpp
-        src/logger.cpp)
+        src/logger.cpp
+        src/form_browser.cpp)
 
 
 
