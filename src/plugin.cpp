@@ -746,7 +746,7 @@ RE::BGSArtObject* GetArtObjectByIndex(RE::StaticFunctionTag*, std::string ModNam
     //RE::BGSArtObject* theArt = art_objects_filtered[artIndex];
     RE::BGSArtObject* theArt = art_objects_by_mod[ModName][artIndex];
 
-    logger::debug("Retrieving art object number: {}", artIndex);
+    logger::debug("Retrieving art object number: {}, model path: {}", artIndex, theArt->model);
     return theArt;
 
 }
