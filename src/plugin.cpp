@@ -659,7 +659,13 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
     vm->RegisterFunction("GetArtObjectByIndex", "ED_SKSEnativebindings", GetArtObjectByIndex);
-    vm->RegisterFunction("SetupArtObjectArray", "ED_SKSEnativebindings", SetupArtObjectArray);
+    vm->RegisterFunction("SetupFormMaps", "ED_SKSEnativebindings", SetupFormMaps);
+    vm->RegisterFunction("GetArtObjectByIndex", "ED_SKSEnativebindings", GetArtObjectByIndex);
+    vm->RegisterFunction("GetExplosionByIndex", "ED_SKSEnativebindings", GetExplosionByIndex);
+    vm->RegisterFunction("GetProjectileByIndex", "ED_SKSEnativebindings", GetProjectileByIndex);
+    vm->RegisterFunction("GetActivatorByIndex", "ED_SKSEnativebindings", GetActivatorByIndex);
+    vm->RegisterFunction("GetHazardByIndex", "ED_SKSEnativebindings", GetHazardByIndex);
+
     logger::info("Papyrus functions bound!");
     return true;
 }
