@@ -378,6 +378,33 @@ void IncreaseActiveEffectDuration(RE::StaticFunctionTag*, RE::ActiveEffect* theE
     }
 }
 
+bool DispelAllSlowTimeEffects(RE::StaticFunctionTag*) {
+
+    auto playerRef = RE::PlayerCharacter::GetSingleton();
+    if (playerRef == nullptr) {
+        logger::debug("DispelAllSlowTimeEffects has trouble getting player ref, aborting!");
+        return false;
+    }
+
+    auto playerAsMagicTarget = playerRef->AsMagicTarget();
+    if (playerAsMagicTarget == nullptr) {
+        logger::debug("DispelAllSlowTimeEffects has trouble getting player ref magic target, aborting!");
+        return false;
+    }
+    bool playerIndeedHasEffect = playerAsMagicTarget->HasEffectWithArchetype(RE::EffectArchetypes::ArchetypeID::kSlowTime);
+    if (playerIndeedHasEffect) {
+        playerAsMagicTarget->DispelEffectsWithArchetype(RE::EffectArchetypes::ArchetypeID::kSlowTime, true);
+        return true;
+    }
+    
+    return false;
+}
+
+void SetTimeSlowdown(RE::StaticFunctionTag*, float worldTimeScale, float playerTimeScale) { 
+    auto vatscontroller = RE::VATS::GetSingleton();
+    vatscontroller->SetMagicTimeSlowdown(worldTimeScale, playerTimeScale);
+}
+
 RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int playerLevel, int skillsPerLevelSetting, int skillBaseSetting) {
 
 
@@ -656,6 +683,9 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("GetActiveEffectCommandedActor", "ED_SKSEnativebindings", GetActiveEffectCommandedActor);
     vm->RegisterFunction("IncreaseActiveEffectDuration", "ED_SKSEnativebindings", IncreaseActiveEffectDuration);
     vm->RegisterFunction("GetAdjustedAvForComparison", "ED_SKSEnativebindings", GetAdjustedAvForComparison);
+    vm->RegisterFunction("DispelAllSlowTimeEffects", "ED_SKSEnativebindings", DispelAllSlowTimeEffects);
+    vm->RegisterFunction("SetTimeSlowdown", "ED_SKSEnativebindings", SetTimeSlowdown);
+
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
     vm->RegisterFunction("GetArtObjectByIndex", "ED_SKSEnativebindings", GetArtObjectByIndex);
