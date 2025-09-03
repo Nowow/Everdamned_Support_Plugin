@@ -152,7 +152,7 @@ struct ShaderStuff {
         //protectedShader = RE::TESForm::LookupByID(shaderFormID)->As<RE::TESEffectShader>();
 
         necroticFleshKeyword = RE::TESForm::LookupByEditorID("ED_Mechanics_Keyword_NecroticFleshCIF")->As<RE::BGSKeyword>();
-        necroticFleshShader = RE::TESForm::LookupByEditorID("ed_Test_Art_Shader_MagicArmorEbonyFleshFXS")->As<RE::TESEffectShader>();
+        //necroticFleshShader = RE::TESForm::LookupByEditorID("ED_Art_Shader_GargoyleFlesh")->As<RE::TESEffectShader>();
         ferociousSurgePerk = RE::TESForm::LookupByEditorID("ED_VampirePowers_Pw_FerociousSurge_Perk")->As<RE::BGSPerk>();
 
     }
@@ -713,8 +713,8 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
         }
 
     } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
-        ShaderStuff::ReadForms();
-        ShaderStuff::InstallHook();
+        ShaderStuff::ReadForms(); //keyword and ferocios surge for sprint police
+        //ShaderStuff::InstallHook();
         SprintPolice::InstallHook();
 
     }
