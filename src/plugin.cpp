@@ -71,9 +71,7 @@ struct ShaderStuff {
             auto* someRef = someShader->target.get().get();
             auto shaderForm = someShader->effectData;
 
-            logger::debug("Shader name: {}", shaderForm->GetFormEditorID());
-
-            /*if (someRef == nullptr) {
+            if (someRef == nullptr) {
                 logger::debug("Encountered a nullptr, default behavior - applying");
                 func(someShader);
             }
@@ -100,9 +98,8 @@ struct ShaderStuff {
             } else {
                 logger::debug("Shader is applied to player, is not protected, player has no keyword, applying!");
                 func(someShader);
-            }*/
-
-            func(someShader);
+            }
+            
         }
         static inline REL::Relocation<decltype(thunk)> func;
     };
@@ -113,16 +110,16 @@ struct ShaderStuff {
         logger::debug("Installing shader hooks");
         
 
-        //if (necroticFleshKeyword == nullptr) {
-        //    logger::debug("Necrotic Flesh keyword form was not established, not installing shader hooks!");
-        //    return;
-        //} else if (necroticFleshShader == nullptr) {
-        //    logger::debug("Necrotic Flesh shader form was not established, not installing shader hooks!");
-        //    return;
-        //}
+        if (necroticFleshKeyword == nullptr) {
+            logger::debug("Necrotic Flesh keyword form was not established, not installing shader hooks!");
+            return;
+        } else if (necroticFleshShader == nullptr) {
+            logger::debug("Necrotic Flesh shader form was not established, not installing shader hooks!");
+            return;
+        }
         
-        REL::Relocation<std::uintptr_t> target{RELOCATION_ID(34132, 34912), REL::Relocate(0x0, 0x0)};
-        stl::write_thunk_call<ShaderReferenceEffectMy>(target.address());
+        //REL::Relocation<std::uintptr_t> target{RELOCATION_ID(34132, 34912), REL::Relocate(0x0, 0x0)};
+        //stl::write_thunk_call<ShaderReferenceEffectMy>(target.address());
 
         stl::write_vfunc<RE::ShaderReferenceEffect, 0x36, ShaderReferenceEffectMy>();
         
@@ -717,7 +714,7 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
 
     } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         ShaderStuff::ReadForms(); //keyword and ferocios surge for sprint police
-        ShaderStuff::InstallHook();
+        //ShaderStuff::InstallHook();
         SprintPolice::InstallHook();
 
     }
