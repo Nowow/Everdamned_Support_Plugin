@@ -407,13 +407,46 @@ void SetTimeSlowdown(RE::StaticFunctionTag*, float worldTimeScale, float playerT
 
 RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int playerLevel, int skillsPerLevelSetting, int skillBaseSetting) {
 
+    RE::BSTArray<int> resultArr;
+
+    if (thisActor == nullptr) {
+        logger::debug("This actor was provided to check skill for");
+        resultArr.push_back(-1);
+        resultArr.push_back(-1);
+        return resultArr;
+    }
 
     RE::TESNPC* someNPC = thisActor->GetActorBase();
+
+    if (someNPC == nullptr) {
+        logger::debug("This actor has no actor base for some reason?");
+        resultArr.push_back(-1);
+        resultArr.push_back(-1);
+        return resultArr;
+    }
+
+    RE::TESClass* theClassPtr = someNPC->npcClass;
+
+    
+    if (theClassPtr == nullptr) {
+        logger::debug("This actor has no class assigned");
+        resultArr.push_back(-1);
+        resultArr.push_back(-1);
+        return resultArr;
+    }
+  
     RE::CLASS_DATA thisNpcClass = someNPC->npcClass->data;
 
-    //thisActor->AsActorValueOwner()->GetBaseActorValue();
+    auto train_skill_int = thisNpcClass.teaches.underlying();
+    auto trainSkillMax = thisNpcClass.maximumTrainingLevel;
+    
+    if (train_skill_int > 0 and trainSkillMax > 0) {
+        logger::debug("Actor is a trainer, returning his train skill {} and max train level {}", train_skill_int, trainSkillMax);
+        resultArr.push_back(trainSkillMax);
+        resultArr.push_back(train_skill_int);
+        return resultArr;
+    }
 
-    RE::BSTArray<int> resultArr;
 
     bool lvlsWithPC = someNPC->HasPCLevelMult();
 
@@ -642,10 +675,10 @@ RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* 
     int maxLvl = thisNpcBaseData.calcLevelMax;
     bool isUnique = someNPC->IsUnique();
 
-    if (isUnique) {
+    if (isUnique or (maxLvl <= playerLevel)) {
         adjustLevel = maxLvl;
         logger::debug(
-            "This actor does lvl with PC and is unique, skill will be adjusted to its max lvl of: {}", adjustLevel);
+            "This actor does lvl with PC and is unique or has max level <= player level, skill will be adjusted to its max lvl of: {}", adjustLevel);
     } else {
         // move this shet out of func
         std::random_device rd;
@@ -675,6 +708,65 @@ RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* 
     
 }
 
+bool ValidateArmorRace(RE::StaticFunctionTag*, RE::TESObjectARMO* armorToCheck) {
+
+    if (armorToCheck == nullptr) {
+        logger::debug("No armor provided to validate race");
+        return false;
+    }
+    logger::debug("Armor got to check: {}", armorToCheck->GetFormEditorID());
+
+    auto playerRef = RE::PlayerCharacter::GetSingleton();
+
+    RE::TESRace* raceToMatch = playerRef->GetRace();
+    logger::debug("Current player race: {}", raceToMatch->GetFormEditorID());
+
+    if (raceToMatch == nullptr) {
+        logger::debug("No race provided to validate armor");
+        return false;
+    }
+    logger::debug("Race got to check: {}", armorToCheck->GetFormEditorID());
+
+    RE::TESRace* mainRace = armorToCheck->race;
+    logger::debug("Main race of this armor piece: {}", mainRace->GetFormEditorID());
+
+    if (raceToMatch == mainRace) {
+        logger::debug("Match found in armor main race");
+        return true;
+    }
+
+
+    RE::TESObjectARMA* ArmorAdd = armorToCheck->GetArmorAddon(mainRace);
+
+    if (ArmorAdd == nullptr) {
+        logger::debug("No armor addon for main race");
+        return "No armor addon for main race";
+    }
+
+    logger::debug("Armor addon matching race: {}", ArmorAdd->GetFormEditorID());
+
+    RE::TESRace* mainRaceAddon = ArmorAdd->race;
+    logger::debug("Main race of this armor ADDON piece: {}", mainRaceAddon->GetFormEditorID());
+
+    if (raceToMatch == mainRaceAddon) {
+        logger::debug("Match found in armor ADDON main race");
+        return true;
+    }
+
+    RE::BSTArray<RE::TESRace*> additionalRaces = ArmorAdd->additionalRaces;
+
+    for (auto* aRace : additionalRaces) {
+        if (aRace) {
+            logger::info("Additional race: {}", aRace->GetFormEditorID());
+            if (aRace == raceToMatch) {
+                logger::debug("Match found in armor ADDON additional race");
+                return true;
+            } 
+        }
+    }
+
+    return false; 
+}
 
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     //vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
@@ -685,6 +777,8 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("GetAdjustedAvForComparison", "ED_SKSEnativebindings", GetAdjustedAvForComparison);
     vm->RegisterFunction("DispelAllSlowTimeEffects", "ED_SKSEnativebindings", DispelAllSlowTimeEffects);
     vm->RegisterFunction("SetTimeSlowdown", "ED_SKSEnativebindings", SetTimeSlowdown);
+    vm->RegisterFunction("ValidateArmorRace", "ED_SKSEnativebindings", ValidateArmorRace);
+    
 
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
