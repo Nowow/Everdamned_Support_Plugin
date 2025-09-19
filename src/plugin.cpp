@@ -405,6 +405,14 @@ void SetTimeSlowdown(RE::StaticFunctionTag*, float worldTimeScale, float playerT
     vatscontroller->SetMagicTimeSlowdown(worldTimeScale, playerTimeScale);
 }
 
+void AddThisMuchXP(RE::StaticFunctionTag*, std::int32_t theXP) {
+    const auto player = RE::PlayerCharacter::GetSingleton();
+    auto playerskills = player->GetInfoRuntimeData().skills;
+    playerskills->data->xp += static_cast<float>(theXP);
+    logger::debug("Added player this much xp: {}", theXP);
+
+}
+
 RE::BSTArray<int> GetAdjustedAvForComparison(RE::StaticFunctionTag*, RE::Actor* thisActor, int playerLevel, int skillsPerLevelSetting, int skillBaseSetting) {
 
     RE::BSTArray<int> resultArr;
@@ -778,7 +786,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("DispelAllSlowTimeEffects", "ED_SKSEnativebindings", DispelAllSlowTimeEffects);
     vm->RegisterFunction("SetTimeSlowdown", "ED_SKSEnativebindings", SetTimeSlowdown);
     vm->RegisterFunction("ValidateArmorRace", "ED_SKSEnativebindings", ValidateArmorRace);
-    
+    vm->RegisterFunction("AddThisMuchXP", "ED_SKSEnativebindings", AddThisMuchXP);
 
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);
