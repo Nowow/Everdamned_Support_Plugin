@@ -6,22 +6,23 @@ namespace logger = SKSE::log;
 
 RE::BSString current_widget_root = "_root.WidgetContainer.7.widget";
 constexpr std::string_view bloodPoolAVname = "ED_BloodPool";
-//std::atomic<bool> bloodMeterIsUpdating{false};
+RE::ActorValue bloodPoolAV;
+RE::TESGlobal* totalBloodPoolGlobal;
+
+    //std::atomic<bool> bloodMeterIsUpdating{false};
+
 bool bloodMeterIsUpdating = false;
 std::thread bloodMeterUpdateThread;
 
 
 void CommunicateCurrentWidgetRoot(RE::StaticFunctionTag*, RE::BSString widget_root) {
     
-    logger::debug("Im here");
-
     if (widget_root.empty()) {
         logger::debug("Widget root communicated was empty");
     }
-    
-    
+        
     current_widget_root = widget_root;
-    logger::debug("And then here");
+
 }
 
 RE::ActorValue GetBloodPoolAV() {
@@ -59,11 +60,7 @@ void SetBloodMeterPercent() {
     RE::GPtr<RE::GFxMovieView> view = hud->uiMovie;
 
     auto player = RE::PlayerCharacter::GetSingleton();
-    RE::ActorValue bloodPoolAV = GetBloodPoolAV();
-
     auto currentBloodPool = player->AsActorValueOwner()->GetActorValue(bloodPoolAV);
-
-    RE::TESGlobal* totalBloodPoolGlobal = RE::TESForm::LookupByEditorID<RE::TESGlobal>("ED_Mechanics_BloodPool_Total");
     auto totalBloodPool = totalBloodPoolGlobal->value;
 
     RE::GFxValue args[2];
@@ -73,8 +70,6 @@ void SetBloodMeterPercent() {
     view->Invoke(current_widget_root.c_str(), nullptr, args, 1);
 
 }
-
-void DummyUpdateFunc() { logger::debug("UPDATE ACTION HERE"); }
 
 
 void BloodMeterUpdateLoop() {
@@ -92,6 +87,20 @@ void BloodMeterUpdateLoop() {
 void ToggleBloodPoolUpdateLoop(RE::StaticFunctionTag*, bool toggleOn) {
 
     if (toggleOn) {
+
+        if (current_widget_root.empty()) {
+            logger::debug("Blood Meter Updater: Current meter root not defined, exiting");
+            return;
+        }
+
+        bloodPoolAV = GetBloodPoolAV();
+        totalBloodPoolGlobal = RE::TESForm::LookupByEditorID<RE::TESGlobal>("ED_Mechanics_BloodPool_Total");
+
+        if (totalBloodPoolGlobal == nullptr) {
+            logger::debug("Blood Meter Updater: could not find max pool global, exiting");
+            return;
+        }
+
         bloodMeterIsUpdating = true;
         logger::debug("Blood Meter Update toggled ON");
 
