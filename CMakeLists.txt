@@ -38,6 +38,7 @@ endif()
 set(OUTPUT_FOLDER "F:/ModOrganizer2/mods/Sacrosanct tweaks")
 
 set(headers
+        src/include/API_ActorValueGenerator.h
         src/logger.h
         src/form_browser.h
         src/bloodmeter.h)
