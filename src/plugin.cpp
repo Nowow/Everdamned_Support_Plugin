@@ -7,6 +7,7 @@
 
 #include "logger.h"
 #include "form_browser.h"
+#include "bloodmeter.h"
 
 namespace logger = SKSE::log;
 
@@ -787,6 +788,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("SetTimeSlowdown", "ED_SKSEnativebindings", SetTimeSlowdown);
     vm->RegisterFunction("ValidateArmorRace", "ED_SKSEnativebindings", ValidateArmorRace);
     vm->RegisterFunction("AddThisMuchXP", "ED_SKSEnativebindings", AddThisMuchXP);
+    vm->RegisterFunction("CommunicateCurrentWidgetRoot", "ED_SKSEnativebindings", CommunicateCurrentWidgetRoot);
 
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
     vm->RegisterFunction("LookupSomeFormByEditorID", "ED_SKSEnativebindings", LookupSomeFormByEditorID);

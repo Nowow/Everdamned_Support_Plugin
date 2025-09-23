@@ -39,12 +39,14 @@ set(OUTPUT_FOLDER "F:/ModOrganizer2/mods/Sacrosanct tweaks")
 
 set(headers
         src/logger.h
-        src/form_browser.h)
+        src/form_browser.h
+        src/bloodmeter.h)
 
 set(sources
         src/plugin.cpp
         src/logger.cpp
-        src/form_browser.cpp)
+        src/form_browser.cpp
+        src/bloodmeter.cpp)
 
 
 
