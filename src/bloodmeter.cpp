@@ -8,6 +8,7 @@ RE::BSString current_widget_root = "_root.WidgetContainer.7.widget";
 constexpr std::string_view bloodPoolAVname = "ED_BloodPool";
 RE::ActorValue bloodPoolAV;
 RE::TESGlobal* totalBloodPoolGlobal;
+float lastRatio;
 
     //std::atomic<bool> bloodMeterIsUpdating{false};
 
@@ -45,12 +46,22 @@ RE::ActorValue GetBloodPoolAV() {
 }
 
 
-void SetBloodMeterPercent() {
+void SetBloodMeterPercent(bool bForce) {
 
     if (current_widget_root.empty()) {
         logger::debug("Current meter root not defined, doing nothing");
         return;
     }
+
+    auto player = RE::PlayerCharacter::GetSingleton();
+    auto currentBloodPool = player->AsActorValueOwner()->GetActorValue(bloodPoolAV);
+    auto totalBloodPool = totalBloodPoolGlobal->value;
+
+    float currentRatio = currentBloodPool / totalBloodPool;
+    if (!bForce && lastRatio == currentRatio) return;
+
+    lastRatio = currentRatio;
+
 	auto ui = RE::UI::GetSingleton();
     if (!ui || !ui->IsMenuOpen(RE::HUDMenu::MENU_NAME)) return;
 
@@ -59,12 +70,8 @@ void SetBloodMeterPercent() {
 
     RE::GPtr<RE::GFxMovieView> view = hud->uiMovie;
 
-    auto player = RE::PlayerCharacter::GetSingleton();
-    auto currentBloodPool = player->AsActorValueOwner()->GetActorValue(bloodPoolAV);
-    auto totalBloodPool = totalBloodPoolGlobal->value;
-
     RE::GFxValue args[2];
-    args[0].SetNumber(currentBloodPool/totalBloodPool);
+    args[0].SetNumber(currentRatio);
     args[1].SetNumber(0.0f);
     
     view->Invoke(current_widget_root.c_str(), nullptr, args, 1);
@@ -75,18 +82,18 @@ void SetBloodMeterPercent() {
 void BloodMeterUpdateLoop() {
 
     while (bloodMeterIsUpdating) {
-         logger::debug("UPDATE LOOP THREAD HERE");
+         //logger::debug("UPDATE LOOP THREAD HERE");
          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-         SKSE::GetTaskInterface()->AddUITask([]() { SetBloodMeterPercent(); });
+         SKSE::GetTaskInterface()->AddUITask([]() { SetBloodMeterPercent(false); });
     }
 
-    //SetBloodMeterPercent();
 }
 
 
 void ToggleBloodPoolUpdateLoop(RE::StaticFunctionTag*, bool toggleOn) {
 
     if (toggleOn) {
+        if (bloodMeterIsUpdating) return;
 
         if (current_widget_root.empty()) {
             logger::debug("Blood Meter Updater: Current meter root not defined, exiting");
@@ -101,6 +108,7 @@ void ToggleBloodPoolUpdateLoop(RE::StaticFunctionTag*, bool toggleOn) {
             return;
         }
 
+        SetBloodMeterPercent(true);
         bloodMeterIsUpdating = true;
         logger::debug("Blood Meter Update toggled ON");
 
@@ -108,6 +116,7 @@ void ToggleBloodPoolUpdateLoop(RE::StaticFunctionTag*, bool toggleOn) {
         
         //SKSE::GetTaskInterface()->AddUITask([]() { BloodMeterUpdateLoop(); });
     } else {
+        if (!bloodMeterIsUpdating) return;
         bloodMeterIsUpdating = false;
         /*if (bloodMeterUpdateThread.joinable()) {
             bloodMeterUpdateThread.join();
