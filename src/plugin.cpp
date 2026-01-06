@@ -257,9 +257,22 @@ struct Hooks {
                 auto summoner = test->GetUserData();
                 
                 // getting current command limit with respect to the relevant entry point
+
+                //auto* settingss = RE::GameSettingCollection::GetSingleton();
+                
+                float iMaxSummonedCreaturesSetting = 
+                    static_cast<float>(RE::GameSettingCollection::GetSingleton()->GetSetting("iMaxSummonedCreatures")->GetUInt());
+                logger::info("Current iMaxSummonedCreatures setting: {}", iMaxSummonedCreaturesSetting);
+
                 perkfactor = 1.0f;
                 RE::BGSEntryPoint::HandleEntryPoint(RE::BGSPerkEntry::EntryPoint::kModCommandedActorLimit, summoner,
                                                     akCastedMagic, &perkfactor);
+
+                logger::info("Current perk factor: {}", perkfactor);
+
+                if (iMaxSummonedCreaturesSetting > perkfactor) {
+                    perkfactor = iMaxSummonedCreaturesSetting;
+                }
 
                 logger::info("Current command limit: {}", perkfactor);
 

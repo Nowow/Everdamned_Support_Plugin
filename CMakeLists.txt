@@ -35,7 +35,7 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 endif()
 
 # Otherwise, you can set OUTPUT_FOLDER to any place you'd like :)
-set(OUTPUT_FOLDER "G:/SkyrimStuff/MO2stuff/mods/Everdamned")
+set(OUTPUT_FOLDER "C:/skyrim_stuff_ported_from_pc/mods/Everdamned")
 
 set(headers
         src/include/API_ActorValueGenerator.h
