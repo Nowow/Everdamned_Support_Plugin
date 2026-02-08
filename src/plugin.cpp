@@ -16,6 +16,44 @@ RE::TESEffectShader* necroticFleshShader;
 RE::BGSPerk* ferociousSurgePerk;
 
 
+void RelayOnVampireFeed(RE::StaticFunctionTag*, RE::Actor* receiver, RE::Actor* akTarget) {
+    if (!receiver) {
+        return;
+    }
+
+    auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+    if (!vm) {
+        return;
+    }
+
+    auto* policy = vm->GetObjectHandlePolicy();
+    if (!policy) {
+        return;
+    }
+
+    const RE::VMHandle handle = policy->GetHandleForObject(receiver->GetFormType(), receiver);
+
+    if (handle == policy->EmptyHandle()) {
+        return;
+    }
+
+    auto* skyrimVM = RE::SkyrimVM::GetSingleton();
+    if (!skyrimVM) {
+        policy->ReleaseHandle(handle);
+        return;
+    }
+
+    logger::info("SendVampireFeedEvent about to send the event");
+
+    RE::BSFixedString eventName("OnVampireFeed");
+
+    auto* args = RE::MakeFunctionArguments(std::move(akTarget));
+
+    skyrimVM->SendAndRelayEvent(handle, &eventName, args, nullptr);
+    policy->ReleaseHandle(handle);
+}
+
+
 struct SprintPolice {
     struct SprintHandlerMy {
 
@@ -803,6 +841,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("AddThisMuchXP", "ED_SKSEnativebindings", AddThisMuchXP);
     vm->RegisterFunction("CommunicateCurrentWidgetRoot", "ED_SKSEnativebindings", CommunicateCurrentWidgetRoot);
     vm->RegisterFunction("ToggleBloodPoolUpdateLoop", "ED_SKSEnativebindings", ToggleBloodPoolUpdateLoop);
+    vm->RegisterFunction("RelayOnVampireFeed", "ED_SKSEnativebindings", RelayOnVampireFeed);
     
 
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
