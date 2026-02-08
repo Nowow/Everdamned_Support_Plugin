@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "form_browser.h"
 #include "bloodmeter.h"
+#include "TDM_handler.h"
 
 namespace logger = SKSE::log;
 
@@ -828,6 +829,9 @@ bool ValidateArmorRace(RE::StaticFunctionTag*, RE::TESObjectARMO* armorToCheck) 
     return false; 
 }
 
+
+
+
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     //vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
     //vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
@@ -842,6 +846,7 @@ bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("CommunicateCurrentWidgetRoot", "ED_SKSEnativebindings", CommunicateCurrentWidgetRoot);
     vm->RegisterFunction("ToggleBloodPoolUpdateLoop", "ED_SKSEnativebindings", ToggleBloodPoolUpdateLoop);
     vm->RegisterFunction("RelayOnVampireFeed", "ED_SKSEnativebindings", RelayOnVampireFeed);
+    vm->RegisterFunction("GetTDMtargetLockKey", "ED_SKSEnativebindings", TDM_handler::Read_uTargetLockKey);
     
 
     vm->RegisterFunction("StopAllShadersExceptThis", "ED_SKSEnativebindings", StopAllShadersExceptThis);
@@ -869,6 +874,10 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
         } else {
             logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
         }
+
+        TDM_handler::SetupTDMHandler();
+
+        
 
     } else if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         ShaderStuff::ReadForms(); //keyword and ferocios surge for sprint police

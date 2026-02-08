@@ -41,13 +41,17 @@ set(headers
         src/include/API_ActorValueGenerator.h
         src/logger.h
         src/form_browser.h
-        src/bloodmeter.h)
+        src/bloodmeter.h
+        src/TDM_handler.h
+)
 
 set(sources
         src/plugin.cpp
         src/logger.cpp
         src/form_browser.cpp
-        src/bloodmeter.cpp)
+        src/bloodmeter.cpp
+        src/TDM_handler.cpp
+)
 
 
 
