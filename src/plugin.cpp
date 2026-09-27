@@ -266,11 +266,29 @@ struct Hooks {
     struct CommandedActorHook {
         static void thunk(RE::AIProcess* test, RE::ActiveEffectReferenceEffectController* target2, void* target3) {
             func(test, target2, target3);
-            auto a_AE = target2->effect;
-
             logger::info("Commanded Actor effect was cast!");
 
-            bool casterIsPlayer = test->GetUserData()->IsPlayerRef();
+            if (test == nullptr) {
+                logger::info("But the AIProcess was nullptr, doing nothing!");
+
+                return;
+            }
+
+            if (target2 == nullptr) {
+                logger::info("But the ActiveEffectReferenceEffectController was nullptr, doing nothing!");
+                return;
+            }
+
+            auto a_AE = target2->effect;
+
+            RE::Actor* casterUserData = test->GetUserData();
+
+            if (casterUserData == nullptr) {
+                logger::info("But the caster user data was nullptr, doing nothing!");
+                return;
+            }
+
+            bool casterIsPlayer = casterUserData->IsPlayerRef();
             logger::info("Caster was player: {}", casterIsPlayer ? "true" : "false");
             
             if (casterIsPlayer && a_AE->effect->baseEffect->HasKeywordString("MagicSummon_ED_Uncapped")) {
